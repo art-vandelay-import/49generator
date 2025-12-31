@@ -153,6 +153,23 @@ export default function Home() {
       <button onClick={download} style={{ padding: "10px 14px", fontSize: 16 }}>
         Download Word Memo
       </button>
+      <footer
+  style={{
+    marginTop: 28,
+    paddingTop: 14,
+    borderTop: "1px solid #eee",
+    color: "#666",
+    fontSize: 13,
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+  }}
+>
+  <div>© {new Date().getFullYear()} H. Bag, Inc.</div>
+  <div>For the love of god, please use spellcheck.</div>
+</footer>
+
     </main>
   );
 }
