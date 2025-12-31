@@ -90,7 +90,7 @@ export default function Home() {
     // Exclude UI-only fields from direct pass-through
     const EXCLUDE = new Set(["FILE_NAME", "DATE_INPUT", "INCLUDE_REPORT_UNDER", "REPORT_NUMBERS_TEXT"]);
 
-   for (const [k, v] of Object.entries(base)) {
+    for (const [k, v] of Object.entries(base)) {
   if (EXCLUDE.has(k)) continue;
 
   if (k === "SUBJECT") {
@@ -99,6 +99,7 @@ export default function Home() {
     out[k] = String(v ?? "");
   }
 }
+
 
     // DATE: derive MONTH / DAY / YEAR for your existing Word placeholders:
     // In Word body you likely have: {{MONTH}} {{DAY}}, {{YEAR}}
