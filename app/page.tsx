@@ -301,7 +301,7 @@ export default function Home() {
           Download to Word
         </button>
       </div>
-
+<div style={{ height: 18 }} />
       <section style={cardStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <h2 style={{ margin: 0 }}>Changelog</h2>
