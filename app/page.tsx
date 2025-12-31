@@ -1,11 +1,71 @@
 "use client";
 import { useMemo, useState } from "react";
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function sanitizeFileName(name: string) {
+  const trimmed = (name || "").trim();
+  if (!trimmed) return "";
+  // remove illegal filename chars + collapse spaces
+  return trimmed
+    .replace(/[\/\\?%*:|"<>]/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 80);
+}
+
+// Accepts: 12/31/25, 12/31/2025, 1/2/25, 01-02-25, etc.
+function parseUSDateToParts(input: string): { monthName: string; day: string; year: string } | null {
+  const raw = (input || "").trim();
+  if (!raw) return null;
+
+  const m = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2}|\d{4})$/);
+  if (!m) return null;
+
+  const mm = Number(m[1]);
+  const dd = Number(m[2]);
+  let yy = Number(m[3]);
+
+  if (mm < 1 || mm > 12) return null;
+  if (dd < 1 || dd > 31) return null;
+
+  // Convert 2-digit years (simple, practical rule)
+  if (m[3].length === 2) {
+    // 00–79 => 2000–2079, 80–99 => 1980–1999
+    yy = yy <= 79 ? 2000 + yy : 1900 + yy;
+  }
+
+  // Validate actual calendar date using JS Date
+  const d = new Date(yy, mm - 1, dd);
+  if (d.getFullYear() !== yy || d.getMonth() !== mm - 1 || d.getDate() !== dd) return null;
+
+  return {
+    monthName: MONTH_NAMES[mm - 1],
+    day: String(dd),
+    year: String(yy),
+  };
+}
+
 export default function Home() {
   const [base, setBase] = useState({
-    MONTH: "",
-    DAY: "",
-    YEAR: "",
+    // NEW: file name user chooses
+    FILE_NAME: "",
+
+    // NEW: single date input like 12/31/25
+    DATE_INPUT: "",
+
     FROMTITLE: "",
     FROMCOMMAND: "",
     TOTITLE: "",
@@ -26,27 +86,46 @@ export default function Home() {
   const payload = useMemo(() => {
     const out: Record<string, string> = {};
 
+    // Exclude UI-only fields from direct pass-through
+    const EXCLUDE = new Set([
+      "EMAIL_TO",
+      "FILE_NAME",
+      "DATE_INPUT",
+      "INCLUDE_REPORT_UNDER",
+      "REPORT_NUMBERS_TEXT",
+    ]);
+
     for (const [k, v] of Object.entries(base)) {
-      if (k === "EMAIL_TO") continue; // UI-only
-      if (k === "INCLUDE_REPORT_UNDER") continue; // UI-only
-      if (k === "REPORT_NUMBERS_TEXT") continue; // UI-only
+      if (EXCLUDE.has(k)) continue;
       out[k] = String(v ?? "");
     }
 
+    // DATE: derive MONTH / DAY / YEAR for your existing Word placeholders:
+    // In Word body you likely have: {{MONTH}} {{DAY}}, {{YEAR}}
+    const parts = parseUSDateToParts(base.DATE_INPUT);
+    if (parts) {
+      out.MONTH = parts.monthName;
+      out.DAY = parts.day;
+      out.YEAR = parts.year;
+    } else {
+      // If blank/invalid, leave empty (you can enforce validity in download())
+      out.MONTH = "";
+      out.DAY = "";
+      out.YEAR = "";
+    }
+
+    // REPORT UNDER block (Word header placeholders):
+    // {{REPORT_UNDER_TITLE}} and {{REPORT_NUMBERS}}
     const cleanedReports = (base.REPORT_NUMBERS_TEXT || "")
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean)
       .join("\n");
 
-    // These must match placeholders in the WORD HEADER:
-    // Line 1 (underlined in Word): {{REPORT_UNDER_TITLE}}
-    // Line 2+ (normal):           {{REPORT_NUMBERS}}
     if (base.INCLUDE_REPORT_UNDER && cleanedReports.length > 0) {
       out.REPORT_UNDER_TITLE = "REPORT UNDER";
       out.REPORT_NUMBERS = cleanedReports;
     } else {
-      // When unchecked (or empty), both disappear
       out.REPORT_UNDER_TITLE = "";
       out.REPORT_NUMBERS = "";
     }
@@ -55,6 +134,12 @@ export default function Home() {
   }, [base]);
 
   const download = async () => {
+    // Optional: enforce valid date if they typed something
+    if (base.DATE_INPUT.trim() && !parseUSDateToParts(base.DATE_INPUT)) {
+      alert('Please enter a valid date like 12/31/25 (MM/DD/YY).');
+      return;
+    }
+
     const res = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -70,9 +155,13 @@ export default function Home() {
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
 
+    const chosen = sanitizeFileName(base.FILE_NAME);
+    const fallback = `memo_${(payload.SIGNAME || "draft").replace(/\s+/g, "_")}`;
+    const fileBase = chosen || fallback;
+
     const a = document.createElement("a");
     a.href = url;
-    a.download = `memo_${(payload.SIGNAME || "draft").replace(/\s+/g, "_")}.docx`;
+    a.download = fileBase.toLowerCase().endsWith(".docx") ? fileBase : `${fileBase}.docx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -84,11 +173,14 @@ export default function Home() {
     const to = (base.EMAIL_TO || "").trim();
     const subject = encodeURIComponent(base.SUBJECT ? `Memo: ${base.SUBJECT}` : "Memo");
 
+    const parts = parseUSDateToParts(base.DATE_INPUT);
+    const dateLine = parts ? `${parts.monthName} ${parts.day}, ${parts.year}` : "";
+
     const body = encodeURIComponent(
       `Attached is the generated memo.\n\n` +
         `From: ${base.FROMTITLE || ""}${base.FROMCOMMAND ? `, ${base.FROMCOMMAND}` : ""}\n` +
         `To: ${base.TOTITLE || ""}${base.TOCOMMAND ? `, ${base.TOCOMMAND}` : ""}\n` +
-        `Date: ${base.MONTH || ""} ${base.DAY || ""}, ${base.YEAR || ""}\n` +
+        `Date: ${dateLine}\n` +
         `Subject: ${base.SUBJECT || ""}\n\n` +
         `Tip: Download the memo first, then attach the .docx from Files/Downloads.`
     );
@@ -101,27 +193,28 @@ export default function Home() {
       <h1 style={{ fontSize: 32, marginBottom: 6 }}>Memo Generator</h1>
       <p style={{ marginBottom: 18 }}>Fill the fields and download your memo as a Word document.</p>
 
+      {/* NEW: File naming at the top */}
+      <section style={cardStyle}>
+        <h2 style={{ marginTop: 0 }}>File</h2>
+        <Field
+          label="File name (optional)"
+          placeholder="e.g., 49_Memo_Johnson_12-31-25"
+          value={base.FILE_NAME}
+          onChange={(v) => setBase({ ...base, FILE_NAME: v })}
+        />
+      </section>
+
+      {/* NEW: Single date input */}
       <section style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>Date</h2>
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field
-            label="Month"
-            placeholder="e.g., December"
-            value={base.MONTH}
-            onChange={(v) => setBase({ ...base, MONTH: v })}
-          />
-          <Field
-            label="Day"
-            placeholder="e.g., 30"
-            value={base.DAY}
-            onChange={(v) => setBase({ ...base, DAY: v })}
-          />
-          <Field
-            label="Year"
-            placeholder="e.g., 2025"
-            value={base.YEAR}
-            onChange={(v) => setBase({ ...base, YEAR: v })}
-          />
+        <Field
+          label="Date (MM/DD/YY)"
+          placeholder="e.g., 12/31/25"
+          value={base.DATE_INPUT}
+          onChange={(v) => setBase({ ...base, DATE_INPUT: v })}
+        />
+        <div style={{ color: "#666", fontSize: 13, marginTop: -6 }}>
+          Will print in the memo as: <b>December 31, 2025</b>
         </div>
       </section>
 
@@ -184,23 +277,19 @@ export default function Home() {
             <input
               type="checkbox"
               checked={base.INCLUDE_REPORT_UNDER}
-              onChange={(e) =>
-                setBase({ ...base, INCLUDE_REPORT_UNDER: e.target.checked })
-              }
+              onChange={(e) => setBase({ ...base, INCLUDE_REPORT_UNDER: e.target.checked })}
             />
-            Add Communication Numbers
+            Add “REPORT UNDER” header
           </label>
         </div>
 
         {base.INCLUDE_REPORT_UNDER && (
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Numbers (one per line)</label>
+            <label style={labelStyle}>Report numbers (one per line)</label>
             <textarea
               value={base.REPORT_NUMBERS_TEXT}
-              placeholder={`e.g.\nPBBX #001-2026\nPSB #26-001`}
-              onChange={(e) =>
-                setBase({ ...base, REPORT_NUMBERS_TEXT: e.target.value })
-              }
+              placeholder={`e.g.\nPA #14-53-332\nCOTR #454`}
+              onChange={(e) => setBase({ ...base, REPORT_NUMBERS_TEXT: e.target.value })}
               style={{ width: "100%", padding: 10, fontSize: 16, minHeight: 110 }}
             />
           </div>
@@ -252,8 +341,8 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <div>© {new Date().getFullYear()} 49 Generator</div>
-        <div>webmaster@49generator.com</div>
+        <div>© {new Date().getFullYear()} Memo Generator</div>
+        <div>Internal Use Only</div>
       </footer>
     </main>
   );
