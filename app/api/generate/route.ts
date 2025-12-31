@@ -1,85 +1,115 @@
+// app/api/generate/route.ts
 import { NextRequest } from "next/server";
 import path from "path";
-import fs from "fs/promises";
+import { promises as fs } from "fs";
+
+// Docxtemplater stack
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
-function toStringValue(v: unknown): string {
-  if (v === null || v === undefined) return "";
-  if (typeof v === "boolean") return v ? "true" : "";
-  if (typeof v === "number") return Number.isFinite(v) ? String(v) : "";
-  if (typeof v === "string") return v;
-  // If someone accidentally sends objects/arrays, stringify safely
-  try {
-    return JSON.stringify(v);
-  } catch {
-    return "";
-  }
+type Payload = Record<string, any>;
+
+function sanitizeFileName(name: string) {
+  const trimmed = (name || "").trim();
+  if (!trimmed) return "49.docx";
+  const safe = trimmed
+    .replace(/[\/\\?%*:|"<>]/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 80);
+  return safe.toLowerCase().endsWith(".docx") ? safe : `${safe}.docx`;
 }
 
-function normalizeData(input: Record<string, unknown>): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(input || {})) {
-    out[k] = toStringValue(v);
+async function readTemplateBuffer(): Promise<Buffer> {
+  // Try common locations (you only need ONE of these to exist)
+  const candidates = [
+    path.join(process.cwd(), "app", "api", "generate", "template.docx"),
+    path.join(process.cwd(), "public", "template.docx"),
+    path.join(process.cwd(), "template.docx"),
+  ];
+
+  for (const p of candidates) {
+    try {
+      return await fs.readFile(p);
+    } catch {
+      // keep trying
+    }
   }
 
-  // Make sure the conditional flag ALWAYS exists (no undefined => no weird rendering)
-  // Accepts: "true", true, 1, "1" as enabled.
-  const raw = out.SHOW_REPORT_UNDER?.toLowerCase();
-  const enabled = raw === "true" || raw === "1" || raw === "yes";
-  out.SHOW_REPORT_UNDER = enabled ? "true" : "";
-
-  // If condition is off, hard-clear header vars too (prevents leftover text)
-  if (!enabled) {
-    out.REPORT_UNDER_TITLE = "";
-    out.REPORT_NUMBERS = "";
-  }
-
-  return out;
+  throw new Error(
+    "Template .docx not found. Put template.docx in /public OR in /app/api/generate/ OR project root."
+  );
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as Record<string, unknown>;
-    const data = normalizeData(body);
+    const data = (await req.json()) as Payload;
 
-    const templatePath = path.join(process.cwd(), "templates", "template.docx");
-    const content = await fs.readFile(templatePath);
+    // ----- Normalize / enforce types -----
+    // Your UI already uppercases SUBJECT in the payload, but this makes it bulletproof.
+    if (typeof data.SUBJECT === "string") data.SUBJECT = data.SUBJECT.toUpperCase();
 
-    const zip = new PizZip(content);
+    // IMPORTANT: SHOW_REPORT_UNDER must be boolean for docxtemplater section tags
+    // Your UI should send true/false. But in case it sends "1"/"" we normalize it.
+    const show =
+      data.SHOW_REPORT_UNDER === true ||
+      data.SHOW_REPORT_UNDER === "1" ||
+      data.SHOW_REPORT_UNDER === 1;
 
+    data.SHOW_REPORT_UNDER = show;
+
+    // Ensure these exist so template doesn't see "undefined"
+    if (!show) {
+      data.REPORT_UNDER_TITLE = "";
+      data.REPORT_NUMBERS = "";
+    } else {
+      // If enabled, make sure strings exist
+      data.REPORT_UNDER_TITLE = String(data.REPORT_UNDER_TITLE ?? "REPORT UNDER");
+      data.REPORT_NUMBERS = String(data.REPORT_NUMBERS ?? "");
+    }
+
+    // Optional: allow server-side filename if you ever pass it
+    const finalName = sanitizeFileName(String(data.FILE_NAME ?? "49"));
+
+    // Remove any fields you never want to touch template
+    delete data.FILE_NAME;
+
+    // ----- Load template -----
+    const templateBuf = await readTemplateBuffer();
+    const zip = new PizZip(templateBuf);
+
+    // Use {{ }} delimiters because your Word doc uses {{REPORT_NUMBERS}} etc.
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      // Prevent "undefined" ever appearing in the doc
-      nullGetter: () => "",
+      delimiters: { start: "{{", end: "}}" },
     });
 
     doc.setData(data);
 
-    doc.render();
+    try {
+      doc.render();
+    } catch (err: any) {
+      // Return useful error (this is what you saw as “Unopened tag”)
+      const e = err;
+      return Response.json(
+        {
+          error: "Template parse failed",
+          detail: e?.message ?? "Unknown error",
+          errors: e?.properties?.errors ?? [],
+        },
+        { status: 400 }
+      );
+    }
 
-    const buf: Buffer = doc.getZip().generate({
-      type: "nodebuffer",
-      compression: "DEFLATE",
-    });
+    const outZip = doc.getZip();
+    const buf: Buffer = outZip.generate({ type: "nodebuffer" });
 
-    // Optional: allow client to name it; otherwise default
-    const filename =
-      (data.FILE_NAME && data.FILE_NAME.trim()) ||
-      `memo_${(data.SIGNAME || "draft").trim().replace(/\s+/g, "_")}`;
+    // ✅ Fix: Web Response body needs Uint8Array / ArrayBuffer, not Node Buffer (TypeScript)
+    const body = new Uint8Array(buf);
 
-    const safeName = filename
-      .replace(/[\/\\?%*:|"<>]/g, "")
-      .replace(/\s+/g, "_")
-      .slice(0, 80);
-
-    const finalName = safeName.toLowerCase().endsWith(".docx") ? safeName : `${safeName}.docx`;
-
-    return new Response(buf, {
+    return new Response(body, {
       status: 200,
       headers: {
         "Content-Type":
@@ -89,26 +119,12 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err: any) {
-    // Docxtemplater throws helpful error structures; return them cleanly
-    const details = err?.properties
-      ? {
-          id: err.properties.id,
-          explanation: err.properties.explanation,
-          // errors array can be large; include if present
-          errors: err.properties.errors,
-        }
-      : undefined;
-
-    return new Response(
-      JSON.stringify({
-        error: "Failed to generate document",
-        message: err?.message || String(err),
-        details,
-      }),
+    return Response.json(
       {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+        error: "Server error",
+        detail: err?.message ?? String(err),
+      },
+      { status: 500 }
     );
   }
 }
