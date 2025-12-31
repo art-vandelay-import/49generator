@@ -239,7 +239,7 @@ export default function Home() {
 
         <Field
           label="SUBJECT"
-          placeholder="This will print in capital letters."
+          placeholder="This will print in capital letters no matter how you type it."
           value={base.SUBJECT}
           onChange={(v) => setBase({ ...base, SUBJECT: v })}
         />
@@ -310,7 +310,7 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <div>© {new Date().getFullYear()} 49 Generator</div>
+        <div>© {new Date().getFullYear()} H. Bag, Inc.</div>
         <div>webmaster@49generator.com</div>
       </footer>
     </main>
