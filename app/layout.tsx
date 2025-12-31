@@ -3,13 +3,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Memo Generator",
-    template: "%s | Memo Generator",
+    default: "49 Generator",
+    template: "%s | 49 Generator",
   },
-  description: "Generate a memo Word document from a template.",
-  applicationName: "Memo Generator",
+  description: "Generate a 49 in Word.",
+  applicationName: "49 Generator",
   appleWebApp: {
-    title: "Memo Generator",
+    title: "49 Generator",
     capable: true,
     statusBarStyle: "default",
   },
