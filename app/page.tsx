@@ -27,7 +27,9 @@ function sanitizeFileName(name: string) {
 }
 
 // Accepts: 12/31/25, 12/31/2025, 1/2/25, 01-02-25, etc.
-function parseUSDateToParts(input: string): { monthName: string; day: string; year: string } | null {
+function parseUSDateToParts(
+  input: string
+): { monthName: string; day: string; year: string } | null {
   const raw = (input || "").trim();
   if (!raw) return null;
 
@@ -60,10 +62,10 @@ function parseUSDateToParts(input: string): { monthName: string; day: string; ye
 
 export default function Home() {
   const [base, setBase] = useState({
-    // NEW: file name user chooses
+    // file name user chooses
     FILE_NAME: "",
 
-    // NEW: single date input like 12/31/25
+    // single date input like 12/31/25
     DATE_INPUT: "",
 
     FROMTITLE: "",
@@ -74,7 +76,6 @@ export default function Home() {
     INFO_TYPE: "",
     SIGNAME: "",
     RANK: "",
-    EMAIL_TO: "",
 
     // REPORT UNDER (header) feature
     INCLUDE_REPORT_UNDER: false,
@@ -87,13 +88,7 @@ export default function Home() {
     const out: Record<string, string> = {};
 
     // Exclude UI-only fields from direct pass-through
-    const EXCLUDE = new Set([
-      "EMAIL_TO",
-      "FILE_NAME",
-      "DATE_INPUT",
-      "INCLUDE_REPORT_UNDER",
-      "REPORT_NUMBERS_TEXT",
-    ]);
+    const EXCLUDE = new Set(["FILE_NAME", "DATE_INPUT", "INCLUDE_REPORT_UNDER", "REPORT_NUMBERS_TEXT"]);
 
     for (const [k, v] of Object.entries(base)) {
       if (EXCLUDE.has(k)) continue;
@@ -108,7 +103,6 @@ export default function Home() {
       out.DAY = parts.day;
       out.YEAR = parts.year;
     } else {
-      // If blank/invalid, leave empty (you can enforce validity in download())
       out.MONTH = "";
       out.DAY = "";
       out.YEAR = "";
@@ -134,9 +128,9 @@ export default function Home() {
   }, [base]);
 
   const download = async () => {
-    // Optional: enforce valid date if they typed something
+    // Enforce valid date if they typed something
     if (base.DATE_INPUT.trim() && !parseUSDateToParts(base.DATE_INPUT)) {
-      alert('Please enter a valid date like 12/31/25 (MM/DD/YY).');
+      alert("Please enter a valid date like 12/31/25 (MM/DD/YY).");
       return;
     }
 
@@ -169,33 +163,13 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  const emailDraft = () => {
-    const to = (base.EMAIL_TO || "").trim();
-    const subject = encodeURIComponent(base.SUBJECT ? `Memo: ${base.SUBJECT}` : "Memo");
-
-    const parts = parseUSDateToParts(base.DATE_INPUT);
-    const dateLine = parts ? `${parts.monthName} ${parts.day}, ${parts.year}` : "";
-
-    const body = encodeURIComponent(
-      `Attached is the generated memo.\n\n` +
-        `From: ${base.FROMTITLE || ""}${base.FROMCOMMAND ? `, ${base.FROMCOMMAND}` : ""}\n` +
-        `To: ${base.TOTITLE || ""}${base.TOCOMMAND ? `, ${base.TOCOMMAND}` : ""}\n` +
-        `Date: ${dateLine}\n` +
-        `Subject: ${base.SUBJECT || ""}\n\n` +
-        `Tip: Download the memo first, then attach the .docx from Files/Downloads.`
-    );
-
-    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${subject}&body=${body}`;
-  };
-
   return (
     <main style={{ maxWidth: 860, margin: "40px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 32, marginBottom: 6 }}>Memo Generator</h1>
-      <p style={{ marginBottom: 18 }}>Fill the fields and download your memo as a Word document.</p>
+      <h1 style={{ fontSize: 32, marginBottom: 6 }}>49 Generator</h1>
+      <p style={{ marginBottom: 18 }}>Perfect 49's. Everytime. Fill in the Fields and Download to Word.</p>
 
-      {/* NEW: File naming at the top */}
+      {/* File naming at the top */}
       <section style={cardStyle}>
-      
         <Field
           label="File name (optional)"
           placeholder="e.g., 49__report_12-31-25"
@@ -204,9 +178,8 @@ export default function Home() {
         />
       </section>
 
-      {/* NEW: Single date input */}
+      {/* Single date input */}
       <section style={cardStyle}>
-        <h2 style={{ marginTop: 0 }}>Date</h2>
         <Field
           label="Date (MM/DD/YY)"
           placeholder="e.g., 12/31/25"
@@ -219,7 +192,6 @@ export default function Home() {
       </section>
 
       <section style={cardStyle}>
-        <h2 style={{ marginTop: 0 }}>From</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
             label="From Title"
@@ -237,7 +209,6 @@ export default function Home() {
       </section>
 
       <section style={cardStyle}>
-        <h2 style={{ marginTop: 0 }}>To</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
             label="To Title"
@@ -258,7 +229,7 @@ export default function Home() {
         <h2 style={{ marginTop: 0 }}>Memo</h2>
 
         <Field
-          label="Subject"
+          label="SUBJECT"
           placeholder="What is the subject?"
           value={base.SUBJECT}
           onChange={(v) => setBase({ ...base, SUBJECT: v })}
@@ -297,7 +268,7 @@ export default function Home() {
 
         <div style={{ display: "flex", gap: 10 }}>
           <Field
-            label="Sign Name"
+            label="Signature Line"
             placeholder="What is your name?"
             value={base.SIGNAME}
             onChange={(v) => setBase({ ...base, SIGNAME: v })}
@@ -309,22 +280,11 @@ export default function Home() {
             onChange={(v) => setBase({ ...base, RANK: v })}
           />
         </div>
-
-        <Field
-          label="Email to (optional)"
-          placeholder="yourname@email.com"
-          value={base.EMAIL_TO}
-          onChange={(v) => setBase({ ...base, EMAIL_TO: v })}
-        />
       </section>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button onClick={download} style={{ padding: "10px 14px", fontSize: 16 }}>
           Download Word Memo
-        </button>
-
-        <button onClick={emailDraft} style={{ padding: "10px 14px", fontSize: 16 }}>
-          Email Draft
         </button>
       </div>
 
