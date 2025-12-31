@@ -188,16 +188,16 @@ export default function Home() {
                 setBase({ ...base, INCLUDE_REPORT_UNDER: e.target.checked })
               }
             />
-            Add “REPORT UNDER” header
+            Add Communication Numbers
           </label>
         </div>
 
         {base.INCLUDE_REPORT_UNDER && (
           <div style={{ marginBottom: 14 }}>
-            <label style={labelStyle}>Report numbers (one per line)</label>
+            <label style={labelStyle}>Numbers (one per line)</label>
             <textarea
               value={base.REPORT_NUMBERS_TEXT}
-              placeholder={`e.g.\nPA #14-53-332\nCOTR #454`}
+              placeholder={`e.g.\nPBBX #001-2026\nPSB #26-001`}
               onChange={(e) =>
                 setBase({ ...base, REPORT_NUMBERS_TEXT: e.target.value })
               }
@@ -252,8 +252,8 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <div>© {new Date().getFullYear()} Memo Generator</div>
-        <div>Internal Use Only</div>
+        <div>© {new Date().getFullYear()} 49 Generator</div>
+        <div>webmaster@49generator.com</div>
       </footer>
     </main>
   );
