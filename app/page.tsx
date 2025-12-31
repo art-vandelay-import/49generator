@@ -15,18 +15,38 @@ export default function Home() {
     SIGNAME: "",
     RANK: "",
     EMAIL_TO: "",
+
+    // REPORT UNDER (header) feature
+    INCLUDE_REPORT_UNDER: false,
+    REPORT_NUMBERS_TEXT: "",
   });
 
   // Only dropdown you want:
   const INFO_TYPE_OPTIONS = ["INFORMATION", "CONSIDERATION", "REVIEW", "APPROVAL"];
 
-  // Payload sent to the API (exclude EMAIL_TO so it never touches the doc generator)
+  // Payload sent to the API (exclude UI-only fields so docxtemplater doesn't see them)
   const payload = useMemo(() => {
     const out: Record<string, string> = {};
+
     for (const [k, v] of Object.entries(base)) {
-      if (k === "EMAIL_TO") continue;
-      out[k] = v;
+      if (k === "EMAIL_TO") continue; // UI-only
+      if (k === "INCLUDE_REPORT_UNDER") continue; // UI-only
+      if (k === "REPORT_NUMBERS_TEXT") continue; // UI-only
+      out[k] = String(v ?? "");
     }
+
+    const cleanedReports = (base.REPORT_NUMBERS_TEXT || "")
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join("\n");
+
+    // These must match placeholders in the WORD HEADER:
+    // Line 1 (underlined in Word): {{REPORT_UNDER_TITLE}}
+    // Line 2+ (normal):           {{REPORT_NUMBERS}}
+    out.REPORT_UNDER_TITLE = base.INCLUDE_REPORT_UNDER ? "REPORT UNDER" : "";
+    out.REPORT_NUMBERS = base.INCLUDE_REPORT_UNDER ? cleanedReports : "";
+
     return out;
   }, [base]);
 
@@ -74,7 +94,7 @@ export default function Home() {
 
   return (
     <main style={{ maxWidth: 860, margin: "40px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 32, marginBottom: 6 }}>UF-49 Generator. Perfect 49's. Everyime.</h1>
+      <h1 style={{ fontSize: 32, marginBottom: 6 }}>Memo Generator</h1>
       <p style={{ marginBottom: 18 }}>Fill the fields and download your memo as a Word document.</p>
 
       <section
@@ -182,6 +202,44 @@ export default function Home() {
           onChange={(v) => setBase({ ...base, INFO_TYPE: v })}
           options={INFO_TYPE_OPTIONS}
         />
+
+        {/* REPORT UNDER (header) */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <input
+              type="checkbox"
+              checked={base.INCLUDE_REPORT_UNDER}
+              onChange={(e) =>
+                setBase({ ...base, INCLUDE_REPORT_UNDER: e.target.checked })
+              }
+            />
+            Add “REPORT UNDER” header
+          </label>
+        </div>
+
+        {base.INCLUDE_REPORT_UNDER && (
+          <div style={{ marginBottom: 14 }}>
+            <label
+              style={{
+                display: "block",
+                paddingBottom: 6,
+                marginBottom: 8,
+                borderBottom: "1px solid #e5e5e5",
+                fontWeight: 600,
+              }}
+            >
+              Report numbers (one per line)
+            </label>
+            <textarea
+              value={base.REPORT_NUMBERS_TEXT}
+              placeholder={`e.g.\n49-12345\n49-67890`}
+              onChange={(e) =>
+                setBase({ ...base, REPORT_NUMBERS_TEXT: e.target.value })
+              }
+              style={{ width: "100%", padding: 10, fontSize: 16, minHeight: 110 }}
+            />
+          </div>
+        )}
 
         <div style={{ display: "flex", gap: 10 }}>
           <Field
