@@ -167,6 +167,9 @@ export default function Home() {
     <main style={{ maxWidth: 860, margin: "40px auto", fontFamily: "system-ui" }}>
       <h1 style={{ fontSize: 32, marginBottom: 6 }}>49 Generator</h1>
       <p style={{ marginBottom: 18 }}>Perfect 49's. Everytime. Fill in the Fields and Download to Word.</p>
+      <p style={{ marginTop: -8, marginBottom: 18, color: "#666", fontSize: 13 }}>
+  Privacy: This tool does not store or log any data you enter—your memo is generated on the fly.
+</p>
 
       {/* File naming at the top */}
       <section style={cardStyle}>
@@ -250,7 +253,7 @@ export default function Home() {
               checked={base.INCLUDE_REPORT_UNDER}
               onChange={(e) => setBase({ ...base, INCLUDE_REPORT_UNDER: e.target.checked })}
             />
-            Add “REPORT UNDER” header
+            Add communication numbers in header
           </label>
         </div>
 
@@ -259,7 +262,7 @@ export default function Home() {
             <label style={labelStyle}>Report numbers (one per line)</label>
             <textarea
               value={base.REPORT_NUMBERS_TEXT}
-              placeholder={`e.g.\nPA #14-53-332\nCOTR #454`}
+              placeholder={`e.g.\nCOD #2026-001\nPSB #454-26`}
               onChange={(e) => setBase({ ...base, REPORT_NUMBERS_TEXT: e.target.value })}
               style={{ width: "100%", padding: 10, fontSize: 16, minHeight: 110 }}
             />
@@ -301,8 +304,8 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <div>© {new Date().getFullYear()} Memo Generator</div>
-        <div>Internal Use Only</div>
+        <div>© {new Date().getFullYear()} 49 Generator</div>
+        <div>webmaster@49generator.com</div>
       </footer>
     </main>
   );
