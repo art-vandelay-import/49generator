@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const MONTH_NAMES = [
   "January",
@@ -65,6 +65,12 @@ function parseUSDateToParts(
 }
 
 export default function Home() {
+    useEffect(() => {
+    const handler = (e: MouseEvent) => e.preventDefault();
+    document.addEventListener("contextmenu", handler);
+    return () => document.removeEventListener("contextmenu", handler);
+  }, []);
+
   const [base, setBase] = useState({
     // file name user chooses
     FILE_NAME: "",
