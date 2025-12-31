@@ -16,6 +16,12 @@ const MONTH_NAMES = [
   "December",
 ];
 
+const CHANGELOG = [
+  { date: "2025-12-31", text: "Added REPORT UNDER header option." },
+  { date: "2025-12-31", text: "Single date input now formats as 'December 31, 2025'." },
+  { date: "2025-12-31", text: "Custom file naming added." },
+];
+
 function sanitizeFileName(name: string) {
   const trimmed = (name || "").trim();
   if (!trimmed) return "";
@@ -28,12 +34,6 @@ function sanitizeFileName(name: string) {
 
 // Accepts: 12/31/25, 12/31/2025, 1/2/25, 01-02-25, etc.
 function parseUSDateToParts(
-  const CHANGELOG = [
-  { date: "2025-12-31", text: "Added REPORT UNDER header option." },
-  { date: "2025-12-31", text: "Single date input now formats as 'December 31, 2025'." },
-  { date: "2025-12-31", text: "Custom file naming added." },
-];
-
   input: string
 ): { monthName: string; day: string; year: string } | null {
   const raw = (input || "").trim();
@@ -88,6 +88,8 @@ export default function Home() {
     REPORT_NUMBERS_TEXT: "",
   });
 
+  const [showChangelog, setShowChangelog] = useState(false);
+
   const INFO_TYPE_OPTIONS = ["INFORMATION", "CONSIDERATION", "REVIEW", "APPROVAL"];
 
   const payload = useMemo(() => {
@@ -97,15 +99,14 @@ export default function Home() {
     const EXCLUDE = new Set(["FILE_NAME", "DATE_INPUT", "INCLUDE_REPORT_UNDER", "REPORT_NUMBERS_TEXT"]);
 
     for (const [k, v] of Object.entries(base)) {
-  if (EXCLUDE.has(k)) continue;
+      if (EXCLUDE.has(k)) continue;
 
-  if (k === "SUBJECT") {
-    out[k] = String(v ?? "").toUpperCase();
-  } else {
-    out[k] = String(v ?? "");
-  }
-}
-
+      if (k === "SUBJECT") {
+        out[k] = String(v ?? "").toUpperCase();
+      } else {
+        out[k] = String(v ?? "");
+      }
+    }
 
     // DATE: derive MONTH / DAY / YEAR for your existing Word placeholders:
     // In Word body you likely have: {{MONTH}} {{DAY}}, {{YEAR}}
@@ -180,8 +181,8 @@ export default function Home() {
       <h1 style={{ fontSize: 32, marginBottom: 6 }}>49 Generator</h1>
       <p style={{ marginBottom: 18 }}>Perfect 49's. Everytime. Fill in the Fields and Download to Word.</p>
       <p style={{ marginTop: -8, marginBottom: 18, color: "#666", fontSize: 13 }}>
-  Privacy: This tool does not store or log any data you enter—your 49 is generated on the fly.
-</p>
+        Privacy: This tool does not store or log any data you enter—your 49 is generated on the fly.
+      </p>
 
       {/* File naming at the top */}
       <section style={cardStyle}>
@@ -241,8 +242,6 @@ export default function Home() {
       </section>
 
       <section style={cardStyle}>
-        
-
         <Field
           label="SUBJECT"
           placeholder="This will print in capital letters no matter how you type it."
@@ -302,29 +301,29 @@ export default function Home() {
           Download to Word
         </button>
       </div>
-<section style={cardStyle}>
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-    <h2 style={{ margin: 0 }}>Changelog</h2>
-    <button
-      type="button"
-      onClick={() => setShowChangelog((v) => !v)}
-      style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer" }}
-    >
-      {showChangelog ? "Hide" : "Show"}
-    </button>
-  </div>
 
-  {showChangelog && (
-    <ul style={{ marginTop: 12, marginBottom: 0, paddingLeft: 18, color: "#444" }}>
-      {CHANGELOG.map((item) => (
-        <li key={`${item.date}-${item.text}`} style={{ marginBottom: 6 }}>
-          <b>{item.date}:</b> {item.text}
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
+      <section style={cardStyle}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <h2 style={{ margin: 0 }}>Changelog</h2>
+          <button
+            type="button"
+            onClick={() => setShowChangelog((v) => !v)}
+            style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer" }}
+          >
+            {showChangelog ? "Hide" : "Show"}
+          </button>
+        </div>
 
+        {showChangelog && (
+          <ul style={{ marginTop: 12, marginBottom: 0, paddingLeft: 18, color: "#444" }}>
+            {CHANGELOG.map((item) => (
+              <li key={`${item.date}-${item.text}`} style={{ marginBottom: 6 }}>
+                <b>{item.date}:</b> {item.text}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <footer
         style={{
