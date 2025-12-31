@@ -299,19 +299,32 @@ export default function Home() {
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button onClick={download} style={{ padding: "10px 14px", fontSize: 16 }}>
-          Download Word Memo
+          Download to Word
         </button>
       </div>
 <section style={cardStyle}>
-  <h2 style={{ marginTop: 0 }}>Changelog</h2>
-  <ul style={{ margin: 0, paddingLeft: 18, color: "#444" }}>
-    {CHANGELOG.map((item) => (
-      <li key={`${item.date}-${item.text}`} style={{ marginBottom: 6 }}>
-        <b>{item.date}:</b> {item.text}
-      </li>
-    ))}
-  </ul>
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+    <h2 style={{ margin: 0 }}>Changelog</h2>
+    <button
+      type="button"
+      onClick={() => setShowChangelog((v) => !v)}
+      style={{ padding: "8px 12px", fontSize: 14, cursor: "pointer" }}
+    >
+      {showChangelog ? "Hide" : "Show"}
+    </button>
+  </div>
+
+  {showChangelog && (
+    <ul style={{ marginTop: 12, marginBottom: 0, paddingLeft: 18, color: "#444" }}>
+      {CHANGELOG.map((item) => (
+        <li key={`${item.date}-${item.text}`} style={{ marginBottom: 6 }}>
+          <b>{item.date}:</b> {item.text}
+        </li>
+      ))}
+    </ul>
+  )}
 </section>
+
 
       <footer
         style={{
