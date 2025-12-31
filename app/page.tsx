@@ -195,10 +195,10 @@ export default function Home() {
 
       {/* NEW: File naming at the top */}
       <section style={cardStyle}>
-        <h2 style={{ marginTop: 0 }}>File</h2>
+      
         <Field
           label="File name (optional)"
-          placeholder="e.g., 49_Memo_Johnson_12-31-25"
+          placeholder="e.g., 49__report_12-31-25"
           value={base.FILE_NAME}
           onChange={(v) => setBase({ ...base, FILE_NAME: v })}
         />
@@ -214,7 +214,7 @@ export default function Home() {
           onChange={(v) => setBase({ ...base, DATE_INPUT: v })}
         />
         <div style={{ color: "#666", fontSize: 13, marginTop: -6 }}>
-          Will print in the memo as: <b>December 31, 2025</b>
+          Will print as: <b>December 31, 2025</b>
         </div>
       </section>
 
