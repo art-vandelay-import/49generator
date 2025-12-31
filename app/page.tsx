@@ -124,16 +124,12 @@ export default function Home() {
     // REPORT UNDER block (Word header section tags):
     // {{#SHOW_REPORT_UNDER}} ... {{/SHOW_REPORT_UNDER}}
     const cleanedReports = (base.REPORT_NUMBERS_TEXT || "")
-  .split(/\r?\n/)
-  .map((s) => s.trim())
-  .filter(Boolean)
-  .join("\n");
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join("\n");
 
-const showReportUnder = base.INCLUDE_REPORT_UNDER && cleanedReports.length > 0;
-
-out.SHOW_REPORT_UNDER = showReportUnder ? "1" : "";
-out.REPORT_UNDER_TITLE = showReportUnder ? "REPORT UNDER" : "";
-out.REPORT_NUMBERS = showReportUnder ? cleanedReports : "";
+    const showReportUnder = base.INCLUDE_REPORT_UNDER && cleanedReports.length > 0;
 
     // IMPORTANT: boolean drives the Word section so the "dead space" disappears when false
     out.SHOW_REPORT_UNDER = showReportUnder;
