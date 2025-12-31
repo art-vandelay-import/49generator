@@ -167,7 +167,7 @@ export default function Home() {
   }}
 >
   <div>© {new Date().getFullYear()} H. Bag, Inc.</div>
-  <div>For the love of god, please use spellcheck.</div>
+  <div>webmaster@49generator.com</div>
 </footer>
 
     </main>
