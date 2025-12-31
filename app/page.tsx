@@ -74,7 +74,7 @@ export default function Home() {
 
   return (
     <main style={{ maxWidth: 860, margin: "40px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 32, marginBottom: 6 }}>Memo Generator</h1>
+      <h1 style={{ fontSize: 32, marginBottom: 6 }}>UF-49 Generator. Perfect 49's. Everyime.</h1>
       <p style={{ marginBottom: 18 }}>Fill the fields and download your memo as a Word document.</p>
 
       <section
