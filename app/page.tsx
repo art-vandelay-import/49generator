@@ -90,10 +90,15 @@ export default function Home() {
     // Exclude UI-only fields from direct pass-through
     const EXCLUDE = new Set(["FILE_NAME", "DATE_INPUT", "INCLUDE_REPORT_UNDER", "REPORT_NUMBERS_TEXT"]);
 
-    for (const [k, v] of Object.entries(base)) {
-      if (EXCLUDE.has(k)) continue;
-      out[k] = String(v ?? "");
-    }
+   for (const [k, v] of Object.entries(base)) {
+  if (EXCLUDE.has(k)) continue;
+
+  if (k === "SUBJECT") {
+    out[k] = String(v ?? "").toUpperCase();
+  } else {
+    out[k] = String(v ?? "");
+  }
+}
 
     // DATE: derive MONTH / DAY / YEAR for your existing Word placeholders:
     // In Word body you likely have: {{MONTH}} {{DAY}}, {{YEAR}}
@@ -168,7 +173,7 @@ export default function Home() {
       <h1 style={{ fontSize: 32, marginBottom: 6 }}>49 Generator</h1>
       <p style={{ marginBottom: 18 }}>Perfect 49's. Everytime. Fill in the Fields and Download to Word.</p>
       <p style={{ marginTop: -8, marginBottom: 18, color: "#666", fontSize: 13 }}>
-  Privacy: This tool does not store or log any data you enter—your memo is generated on the fly.
+  Privacy: This tool does not store or log any data you enter—your 49 is generated on the fly.
 </p>
 
       {/* File naming at the top */}
@@ -229,7 +234,7 @@ export default function Home() {
       </section>
 
       <section style={cardStyle}>
-        <h2 style={{ marginTop: 0 }}>Memo</h2>
+        
 
         <Field
           label="SUBJECT"
