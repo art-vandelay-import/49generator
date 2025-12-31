@@ -14,14 +14,19 @@ export default function Home() {
     INFO_TYPE: "",
     SIGNAME: "",
     RANK: "",
+    EMAIL_TO: "",
   });
 
   // Only dropdown you want:
   const INFO_TYPE_OPTIONS = ["INFORMATION", "CONSIDERATION", "REVIEW", "APPROVAL"];
 
+  // Payload sent to the API (exclude EMAIL_TO so it never touches the doc generator)
   const payload = useMemo(() => {
     const out: Record<string, string> = {};
-    for (const [k, v] of Object.entries(base)) out[k] = v;
+    for (const [k, v] of Object.entries(base)) {
+      if (k === "EMAIL_TO") continue;
+      out[k] = v;
+    }
     return out;
   }, [base]);
 
@@ -51,23 +56,46 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const emailDraft = () => {
+    const to = (base.EMAIL_TO || "").trim();
+    const subject = encodeURIComponent(base.SUBJECT ? `Memo: ${base.SUBJECT}` : "Memo");
+
+    const body = encodeURIComponent(
+      `Attached is the generated memo.\n\n` +
+        `From: ${base.FROMTITLE || ""}${base.FROMCOMMAND ? `, ${base.FROMCOMMAND}` : ""}\n` +
+        `To: ${base.TOTITLE || ""}${base.TOCOMMAND ? `, ${base.TOCOMMAND}` : ""}\n` +
+        `Date: ${base.MONTH || ""} ${base.DAY || ""}, ${base.YEAR || ""}\n` +
+        `Subject: ${base.SUBJECT || ""}\n\n` +
+        `Tip: Download the memo first, then attach the .docx from Files/Downloads.`
+    );
+
+    window.location.href = `mailto:${encodeURIComponent(to)}?subject=${subject}&body=${body}`;
+  };
+
   return (
     <main style={{ maxWidth: 860, margin: "40px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 32, marginBottom: 6 }}>UF-49 Generator. Perfect 49's. Everytime.</h1>
+      <h1 style={{ fontSize: 32, marginBottom: 6 }}>Memo Generator</h1>
       <p style={{ marginBottom: 18 }}>Fill the fields and download your memo as a Word document.</p>
 
-      <section style={{ padding: 16, border: "1px solid #ddd", borderRadius: 10, marginBottom: 18 }}>
+      <section
+        style={{
+          padding: 16,
+          border: "1px solid #ddd",
+          borderRadius: 10,
+          marginBottom: 18,
+        }}
+      >
         <h2 style={{ marginTop: 0 }}>Date</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
             label="Month"
-            placeholder="e.g., July"
+            placeholder="e.g., December"
             value={base.MONTH}
             onChange={(v) => setBase({ ...base, MONTH: v })}
           />
           <Field
             label="Day"
-            placeholder="e.g., 12"
+            placeholder="e.g., 30"
             value={base.DAY}
             onChange={(v) => setBase({ ...base, DAY: v })}
           />
@@ -80,55 +108,76 @@ export default function Home() {
         </div>
       </section>
 
-      <section style={{ padding: 16, border: "1px solid #ddd", borderRadius: 10, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>FROM:</h2>
+      <section
+        style={{
+          padding: 16,
+          border: "1px solid #ddd",
+          borderRadius: 10,
+          marginBottom: 18,
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>From</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
-            label="What is your title?"
-            placeholder="e.g., Patrol Supervisor"
+            label="From Title"
+            placeholder="What is your title?"
             value={base.FROMTITLE}
             onChange={(v) => setBase({ ...base, FROMTITLE: v })}
           />
           <Field
-            label="What is your command?"
-            placeholder="e.g., 9th Precinct"
+            label="From Command"
+            placeholder="What is your command?"
             value={base.FROMCOMMAND}
             onChange={(v) => setBase({ ...base, FROMCOMMAND: v })}
           />
         </div>
       </section>
 
-      <section style={{ padding: 16, border: "1px solid #ddd", borderRadius: 10, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>TO</h2>
+      <section
+        style={{
+          padding: 16,
+          border: "1px solid #ddd",
+          borderRadius: 10,
+          marginBottom: 18,
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>To</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
-            label="Who is this going go?"
-            placeholder="e.g., Commanding Officer"
+            label="To Title"
+            placeholder="What is their title?"
             value={base.TOTITLE}
             onChange={(v) => setBase({ ...base, TOTITLE: v })}
           />
           <Field
-            label="What is their command?"
-            placeholder="e.g., 20th Precinct"
+            label="To Command"
+            placeholder="What is their command?"
             value={base.TOCOMMAND}
             onChange={(v) => setBase({ ...base, TOCOMMAND: v })}
           />
         </div>
       </section>
 
-      <section style={{ padding: 16, border: "1px solid #ddd", borderRadius: 10, marginBottom: 18 }}>
-        <h2 style={{ marginTop: 0 }}>BODY</h2>
+      <section
+        style={{
+          padding: 16,
+          border: "1px solid #ddd",
+          borderRadius: 10,
+          marginBottom: 18,
+        }}
+      >
+        <h2 style={{ marginTop: 0 }}>Memo</h2>
 
         <Field
-          label="SUBJECT (CAPS)"
-          placeholder="e.g., SHOTS FIRED, 123 MAIN STREET"
+          label="Subject"
+          placeholder="What is the subject?"
           value={base.SUBJECT}
           onChange={(v) => setBase({ ...base, SUBJECT: v })}
         />
 
         {/* The ONLY dropdown */}
         <SelectField
-          label="SUBMITTED FOR YOUR...?"
+          label="For your…"
           value={base.INFO_TYPE}
           onChange={(v) => setBase({ ...base, INFO_TYPE: v })}
           options={INFO_TYPE_OPTIONS}
@@ -136,40 +185,53 @@ export default function Home() {
 
         <div style={{ display: "flex", gap: 10 }}>
           <Field
-            label="What's your name?"
-            placeholder="e.g., Art Vandelay"
+            label="Sign Name"
+            placeholder="What is your name?"
             value={base.SIGNAME}
             onChange={(v) => setBase({ ...base, SIGNAME: v })}
           />
           <Field
             label="Rank"
-            placeholder="e.g., Sergeant"
+            placeholder="What is your rank?"
             value={base.RANK}
             onChange={(v) => setBase({ ...base, RANK: v })}
           />
         </div>
+
+        <Field
+          label="Email to (optional)"
+          placeholder="yourname@email.com"
+          value={base.EMAIL_TO}
+          onChange={(v) => setBase({ ...base, EMAIL_TO: v })}
+        />
       </section>
 
-      <button onClick={download} style={{ padding: "10px 14px", fontSize: 16 }}>
-        Download Word Memo
-      </button>
-      <footer
-  style={{
-    marginTop: 28,
-    paddingTop: 14,
-    borderTop: "1px solid #eee",
-    color: "#666",
-    fontSize: 13,
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  }}
->
-  <div>© {new Date().getFullYear()} H. Bag, Inc.</div>
-  <div>webmaster@49generator.com</div>
-</footer>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button onClick={download} style={{ padding: "10px 14px", fontSize: 16 }}>
+          Download Word Memo
+        </button>
 
+        <button onClick={emailDraft} style={{ padding: "10px 14px", fontSize: 16 }}>
+          Email Draft
+        </button>
+      </div>
+
+      <footer
+        style={{
+          marginTop: 28,
+          paddingTop: 14,
+          borderTop: "1px solid #eee",
+          color: "#666",
+          fontSize: 13,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div>© {new Date().getFullYear()} Memo Generator</div>
+        <div>Internal Use Only</div>
+      </footer>
     </main>
   );
 }
@@ -187,7 +249,17 @@ function Field({
 }) {
   return (
     <div style={{ marginBottom: 14, flex: 1 }}>
-      <label style={{ display: "block", marginBottom: 6 }}>{label}</label>
+      <label
+        style={{
+          display: "block",
+          paddingBottom: 6,
+          marginBottom: 8,
+          borderBottom: "1px solid #e5e5e5",
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </label>
       <input
         value={value}
         placeholder={placeholder}
@@ -211,7 +283,17 @@ function SelectField({
 }) {
   return (
     <div style={{ marginBottom: 14, flex: 1 }}>
-      <label style={{ display: "block", marginBottom: 6 }}>{label}</label>
+      <label
+        style={{
+          display: "block",
+          paddingBottom: 6,
+          marginBottom: 8,
+          borderBottom: "1px solid #e5e5e5",
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
