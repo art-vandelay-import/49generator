@@ -239,7 +239,7 @@ export default function Home() {
 
         <Field
           label="SUBJECT"
-          placeholder="What is the subject?"
+          placeholder="This will print in capital letters."
           value={base.SUBJECT}
           onChange={(v) => setBase({ ...base, SUBJECT: v })}
         />
