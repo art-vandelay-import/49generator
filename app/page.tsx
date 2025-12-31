@@ -17,7 +17,7 @@ const MONTH_NAMES = [
 ];
 
 const CHANGELOG = [
-  { date: "2025-12-31", text: 49 Generator released" },
+  { date: "2025-12-31", text: "49 Generator released" },
 ];
 
 function sanitizeFileName(name: string) {
