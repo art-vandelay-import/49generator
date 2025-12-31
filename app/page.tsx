@@ -17,9 +17,7 @@ const MONTH_NAMES = [
 ];
 
 const CHANGELOG = [
-  { date: "2025-12-31", text: "Added REPORT UNDER header option." },
-  { date: "2025-12-31", text: "Single date input now formats as 'December 31, 2025'." },
-  { date: "2025-12-31", text: "Custom file naming added." },
+  { date: "2025-12-31", text: 49 Generator released" },
 ];
 
 function sanitizeFileName(name: string) {
