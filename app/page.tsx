@@ -21,10 +21,8 @@ export default function Home() {
     REPORT_NUMBERS_TEXT: "",
   });
 
-  // Only dropdown you want:
   const INFO_TYPE_OPTIONS = ["INFORMATION", "CONSIDERATION", "REVIEW", "APPROVAL"];
 
-  // Payload sent to the API (exclude UI-only fields so docxtemplater doesn't see them)
   const payload = useMemo(() => {
     const out: Record<string, string> = {};
 
@@ -44,8 +42,14 @@ export default function Home() {
     // These must match placeholders in the WORD HEADER:
     // Line 1 (underlined in Word): {{REPORT_UNDER_TITLE}}
     // Line 2+ (normal):           {{REPORT_NUMBERS}}
-    out.REPORT_UNDER_TITLE = base.INCLUDE_REPORT_UNDER ? "REPORT UNDER" : "";
-    out.REPORT_NUMBERS = base.INCLUDE_REPORT_UNDER ? cleanedReports : "";
+    if (base.INCLUDE_REPORT_UNDER && cleanedReports.length > 0) {
+      out.REPORT_UNDER_TITLE = "REPORT UNDER";
+      out.REPORT_NUMBERS = cleanedReports;
+    } else {
+      // When unchecked (or empty), both disappear
+      out.REPORT_UNDER_TITLE = "";
+      out.REPORT_NUMBERS = "";
+    }
 
     return out;
   }, [base]);
@@ -97,14 +101,7 @@ export default function Home() {
       <h1 style={{ fontSize: 32, marginBottom: 6 }}>Memo Generator</h1>
       <p style={{ marginBottom: 18 }}>Fill the fields and download your memo as a Word document.</p>
 
-      <section
-        style={{
-          padding: 16,
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          marginBottom: 18,
-        }}
-      >
+      <section style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>Date</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
@@ -128,14 +125,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section
-        style={{
-          padding: 16,
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          marginBottom: 18,
-        }}
-      >
+      <section style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>From</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
@@ -153,14 +143,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section
-        style={{
-          padding: 16,
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          marginBottom: 18,
-        }}
-      >
+      <section style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>To</h2>
         <div style={{ display: "flex", gap: 10 }}>
           <Field
@@ -178,14 +161,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section
-        style={{
-          padding: 16,
-          border: "1px solid #ddd",
-          borderRadius: 10,
-          marginBottom: 18,
-        }}
-      >
+      <section style={cardStyle}>
         <h2 style={{ marginTop: 0 }}>Memo</h2>
 
         <Field
@@ -195,7 +171,6 @@ export default function Home() {
           onChange={(v) => setBase({ ...base, SUBJECT: v })}
         />
 
-        {/* The ONLY dropdown */}
         <SelectField
           label="For your…"
           value={base.INFO_TYPE}
@@ -203,7 +178,7 @@ export default function Home() {
           options={INFO_TYPE_OPTIONS}
         />
 
-        {/* REPORT UNDER (header) */}
+        {/* REPORT UNDER checkbox + textarea */}
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <input
@@ -219,20 +194,10 @@ export default function Home() {
 
         {base.INCLUDE_REPORT_UNDER && (
           <div style={{ marginBottom: 14 }}>
-            <label
-              style={{
-                display: "block",
-                paddingBottom: 6,
-                marginBottom: 8,
-                borderBottom: "1px solid #e5e5e5",
-                fontWeight: 600,
-              }}
-            >
-              Report numbers (one per line)
-            </label>
+            <label style={labelStyle}>Report numbers (one per line)</label>
             <textarea
               value={base.REPORT_NUMBERS_TEXT}
-              placeholder={`e.g.\n49-12345\n49-67890`}
+              placeholder={`e.g.\nPA #14-53-332\nCOTR #454`}
               onChange={(e) =>
                 setBase({ ...base, REPORT_NUMBERS_TEXT: e.target.value })
               }
@@ -294,6 +259,21 @@ export default function Home() {
   );
 }
 
+const cardStyle: React.CSSProperties = {
+  padding: 16,
+  border: "1px solid #ddd",
+  borderRadius: 10,
+  marginBottom: 18,
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  paddingBottom: 6,
+  marginBottom: 8,
+  borderBottom: "1px solid #e5e5e5",
+  fontWeight: 600,
+};
+
 function Field({
   label,
   value,
@@ -307,17 +287,7 @@ function Field({
 }) {
   return (
     <div style={{ marginBottom: 14, flex: 1 }}>
-      <label
-        style={{
-          display: "block",
-          paddingBottom: 6,
-          marginBottom: 8,
-          borderBottom: "1px solid #e5e5e5",
-          fontWeight: 600,
-        }}
-      >
-        {label}
-      </label>
+      <label style={labelStyle}>{label}</label>
       <input
         value={value}
         placeholder={placeholder}
@@ -341,17 +311,7 @@ function SelectField({
 }) {
   return (
     <div style={{ marginBottom: 14, flex: 1 }}>
-      <label
-        style={{
-          display: "block",
-          paddingBottom: 6,
-          marginBottom: 8,
-          borderBottom: "1px solid #e5e5e5",
-          fontWeight: 600,
-        }}
-      >
-        {label}
-      </label>
+      <label style={labelStyle}>{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
