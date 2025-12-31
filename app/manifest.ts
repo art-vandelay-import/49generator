@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Memo Generator",
-    short_name: "Memo Generator",
-    description: "Generate a memo Word document from a template.",
+    name: "4 Generator",
+    short_name: "49 Generator",
+    description: "Generate a 49 and download to Word.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

@@ -16,9 +16,7 @@ const MONTH_NAMES = [
   "December",
 ];
 
-const CHANGELOG = [
-  { date: "2025-12-31", text: "49 Generator released" },
-];
+const CHANGELOG = [{ date: "2025-12-31", text: "49 Generator released" }];
 
 function sanitizeFileName(name: string) {
   const trimmed = (name || "").trim();
@@ -31,9 +29,7 @@ function sanitizeFileName(name: string) {
 }
 
 // Accepts: 12/31/25, 12/31/2025, 1/2/25, 01-02-25, etc.
-function parseUSDateToParts(
-  input: string
-): { monthName: string; day: string; year: string } | null {
+function parseUSDateToParts(input: string): { monthName: string; day: string; year: string } | null {
   const raw = (input || "").trim();
   if (!raw) return null;
 
@@ -65,7 +61,7 @@ function parseUSDateToParts(
 }
 
 export default function Home() {
-    useEffect(() => {
+  useEffect(() => {
     const handler = (e: MouseEvent) => e.preventDefault();
     document.addEventListener("contextmenu", handler);
     return () => document.removeEventListener("contextmenu", handler);
@@ -97,7 +93,7 @@ export default function Home() {
   const INFO_TYPE_OPTIONS = ["INFORMATION", "CONSIDERATION", "REVIEW", "APPROVAL"];
 
   const payload = useMemo(() => {
-    const out: Record<string, string> = {};
+    const out: Record<string, any> = {};
 
     // Exclude UI-only fields from direct pass-through
     const EXCLUDE = new Set(["FILE_NAME", "DATE_INPUT", "INCLUDE_REPORT_UNDER", "REPORT_NUMBERS_TEXT"]);
@@ -125,15 +121,20 @@ export default function Home() {
       out.YEAR = "";
     }
 
-    // REPORT UNDER block (Word header placeholders):
-    // {{REPORT_UNDER_TITLE}} and {{REPORT_NUMBERS}}
+    // REPORT UNDER block (Word header section tags):
+    // {{#SHOW_REPORT_UNDER}} ... {{/SHOW_REPORT_UNDER}}
     const cleanedReports = (base.REPORT_NUMBERS_TEXT || "")
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean)
       .join("\n");
 
-    if (base.INCLUDE_REPORT_UNDER && cleanedReports.length > 0) {
+    const showReportUnder = base.INCLUDE_REPORT_UNDER && cleanedReports.length > 0;
+
+    // IMPORTANT: boolean drives the Word section so the "dead space" disappears when false
+    out.SHOW_REPORT_UNDER = showReportUnder;
+
+    if (showReportUnder) {
       out.REPORT_UNDER_TITLE = "REPORT UNDER";
       out.REPORT_NUMBERS = cleanedReports;
     } else {
@@ -305,7 +306,7 @@ export default function Home() {
           Download to Word
         </button>
       </div>
-<div style={{ height: 18 }} />
+      <div style={{ height: 18 }} />
       <section style={cardStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <h2 style={{ margin: 0 }}>Changelog</h2>

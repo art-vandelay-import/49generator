@@ -1,114 +1,114 @@
-import fs from "fs";
+import { NextRequest } from "next/server";
 import path from "path";
+import fs from "fs/promises";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
-function sanitizePayload(input: any): Record<string, string> {
-  // Accept a plain object of key/value pairs and coerce to strings.
-  // Filter out weird keys to avoid abuse on a public endpoint.
+function toStringValue(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "boolean") return v ? "true" : "";
+  if (typeof v === "number") return Number.isFinite(v) ? String(v) : "";
+  if (typeof v === "string") return v;
+  // If someone accidentally sends objects/arrays, stringify safely
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return "";
+  }
+}
+
+function normalizeData(input: Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(input || {})) {
+    out[k] = toStringValue(v);
+  }
 
-  if (!input || typeof input !== "object" || Array.isArray(input)) return out;
+  // Make sure the conditional flag ALWAYS exists (no undefined => no weird rendering)
+  // Accepts: "true", true, 1, "1" as enabled.
+  const raw = out.SHOW_REPORT_UNDER?.toLowerCase();
+  const enabled = raw === "true" || raw === "1" || raw === "yes";
+  out.SHOW_REPORT_UNDER = enabled ? "true" : "";
 
-  for (const [rawKey, rawVal] of Object.entries(input)) {
-    const key = String(rawKey).trim();
-
-    // Allow typical placeholder keys like MONTH, FromTitle, FROM_TITLE, etc.
-    if (!/^[A-Za-z0-9_]+$/.test(key)) continue;
-
-    // Coerce value to string, limit length
-    let val = rawVal == null ? "" : String(rawVal);
-    if (val.length > 5000) val = val.slice(0, 5000);
-
-    out[key] = val;
+  // If condition is off, hard-clear header vars too (prevents leftover text)
+  if (!enabled) {
+    out.REPORT_UNDER_TITLE = "";
+    out.REPORT_NUMBERS = "";
   }
 
   return out;
 }
 
-export async function POST(req: Request) {
-  let payload: Record<string, string> = {};
+export async function POST(req: NextRequest) {
   try {
-    payload = sanitizePayload(await req.json());
-  } catch {
-    payload = {};
-  }
+    const body = (await req.json()) as Record<string, unknown>;
+    const data = normalizeData(body);
 
-  const templatePath = path.join(process.cwd(), "templates", "template.docx");
+    const templatePath = path.join(process.cwd(), "templates", "template.docx");
+    const content = await fs.readFile(templatePath);
 
-  if (!fs.existsSync(templatePath)) {
-    return new Response(
-      JSON.stringify({
-        error: "Template not found",
-        detail: `Expected template at: ${templatePath}`,
-      }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
+    const zip = new PizZip(content);
 
-  const content = fs.readFileSync(templatePath, "binary");
-  const zip = new PizZip(content);
-
-  let doc: any;
-  try {
-    doc = new Docxtemplater(zip, {
+    const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
       linebreaks: true,
-      // Your template uses {{PLACEHOLDER}} style
-      delimiters: { start: "{{", end: "}}" },
-      // Never output "undefined"
+      // Prevent "undefined" ever appearing in the doc
       nullGetter: () => "",
     });
-  } catch (e: any) {
-    return new Response(
-      JSON.stringify(
-        {
-          error: "Template parse failed",
-          detail: e?.message,
-          errors: e?.properties?.errors,
-        },
-        null,
-        2
-      ),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
-  }
 
-  // This is the magic: whatever keys you send become available to the template.
-  // Example: payload { MONTH: "December" } fills {{MONTH}}
-  doc.setData(payload);
+    doc.setData(data);
 
-  try {
     doc.render();
-  } catch (e: any) {
+
+    const buf: Buffer = doc.getZip().generate({
+      type: "nodebuffer",
+      compression: "DEFLATE",
+    });
+
+    // Optional: allow client to name it; otherwise default
+    const filename =
+      (data.FILE_NAME && data.FILE_NAME.trim()) ||
+      `memo_${(data.SIGNAME || "draft").trim().replace(/\s+/g, "_")}`;
+
+    const safeName = filename
+      .replace(/[\/\\?%*:|"<>]/g, "")
+      .replace(/\s+/g, "_")
+      .slice(0, 80);
+
+    const finalName = safeName.toLowerCase().endsWith(".docx") ? safeName : `${safeName}.docx`;
+
+    return new Response(buf, {
+      status: 200,
+      headers: {
+        "Content-Type":
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Disposition": `attachment; filename="${finalName}"`,
+        "Cache-Control": "no-store",
+      },
+    });
+  } catch (err: any) {
+    // Docxtemplater throws helpful error structures; return them cleanly
+    const details = err?.properties
+      ? {
+          id: err.properties.id,
+          explanation: err.properties.explanation,
+          // errors array can be large; include if present
+          errors: err.properties.errors,
+        }
+      : undefined;
+
     return new Response(
-      JSON.stringify(
-        {
-          error: "Template render failed",
-          detail: e?.message,
-          errors: e?.properties?.errors,
-        },
-        null,
-        2
-      ),
-      { status: 400, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: "Failed to generate document",
+        message: err?.message || String(err),
+        details,
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
     );
   }
-
-  const buf = doc.getZip().generate({ type: "nodebuffer" });
-
-  // Pick a filename from SIGNAME if provided, else draft
-  const safeBase = (payload.SIGNAME || payload.sigName || payload.name || "draft")
-    .toString()
-    .replace(/[^a-z0-9_\-]+/gi, "_");
-
-  return new Response(buf, {
-    headers: {
-      "Content-Type":
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "Content-Disposition": `attachment; filename="memo_${safeBase}.docx"`,
-    },
-  });
 }
