@@ -28,6 +28,12 @@ function sanitizeFileName(name: string) {
 
 // Accepts: 12/31/25, 12/31/2025, 1/2/25, 01-02-25, etc.
 function parseUSDateToParts(
+  const CHANGELOG = [
+  { date: "2025-12-31", text: "Added REPORT UNDER header option." },
+  { date: "2025-12-31", text: "Single date input now formats as 'December 31, 2025'." },
+  { date: "2025-12-31", text: "Custom file naming added." },
+];
+
   input: string
 ): { monthName: string; day: string; year: string } | null {
   const raw = (input || "").trim();
@@ -296,6 +302,16 @@ export default function Home() {
           Download Word Memo
         </button>
       </div>
+<section style={cardStyle}>
+  <h2 style={{ marginTop: 0 }}>Changelog</h2>
+  <ul style={{ margin: 0, paddingLeft: 18, color: "#444" }}>
+    {CHANGELOG.map((item) => (
+      <li key={`${item.date}-${item.text}`} style={{ marginBottom: 6 }}>
+        <b>{item.date}:</b> {item.text}
+      </li>
+    ))}
+  </ul>
+</section>
 
       <footer
         style={{
