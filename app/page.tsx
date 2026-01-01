@@ -340,7 +340,24 @@ export default function Home() {
           options={INFO_TYPE_OPTIONS}
         />
 
-        {/* REPORT UNDER checkbox + textarea */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <Field
+            label="Signature Line"
+            placeholder="What is your name?"
+            value={base.SIGNAME}
+            onChange={(v) => setBase({ ...base, SIGNAME: v })}
+          />
+          <Field
+            label="Rank"
+            placeholder="What is your rank?"
+            value={base.RANK}
+            onChange={(v) => setBase({ ...base, RANK: v })}
+          />
+        </div>
+      </section>
+
+      {/* REPORT UNDER section - separate card */}
+      <section style={cardStyle}>
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <input
@@ -363,21 +380,6 @@ export default function Home() {
             />
           </div>
         )}
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <Field
-            label="Signature Line"
-            placeholder="What is your name?"
-            value={base.SIGNAME}
-            onChange={(v) => setBase({ ...base, SIGNAME: v })}
-          />
-          <Field
-            label="Rank"
-            placeholder="What is your rank?"
-            value={base.RANK}
-            onChange={(v) => setBase({ ...base, RANK: v })}
-          />
-        </div>
       </section>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
