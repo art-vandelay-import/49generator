@@ -433,7 +433,7 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <div>© {new Date().getFullYear()} H. Bag, Inc.</div>
+        <div>© {new Date().getFullYear()} Martin Van Nostrand</div>
         <div>webmaster@49generator.com</div>
       </footer>
     </main>
