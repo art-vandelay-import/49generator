@@ -88,6 +88,9 @@ export default function Home() {
     REPORT_NUMBERS_TEXT: "",
   });
 
+  // NEW: Narrative paragraphs state
+  const [narratives, setNarratives] = useState<string[]>([""]);
+
   const [showChangelog, setShowChangelog] = useState(false);
 
   const INFO_TYPE_OPTIONS = ["INFORMATION", "CONSIDERATION", "REVIEW", "APPROVAL"];
@@ -142,8 +145,20 @@ export default function Home() {
       out.REPORT_NUMBERS = "";
     }
 
+    // NEW: Build paragraphs array for Word template loop
+    // Only include non-empty narratives
+    const filledNarratives = narratives.filter(n => n.trim());
+    
+    out.PARAGRAPHS = filledNarratives.map((text, idx) => ({
+      NUMBER: idx + 1,
+      TEXT: text.trim()
+    }));
+
+    // The "For your..." line number is always one more than the last narrative
+    out.LAST_PARAGRAPH_NUMBER = filledNarratives.length + 1;
+
     return out;
-  }, [base]);
+  }, [base, narratives]);
 
   const download = async () => {
     // Enforce valid date if they typed something
@@ -181,6 +196,21 @@ export default function Home() {
     a.remove();
 
     URL.revokeObjectURL(url);
+  };
+
+  // NEW: Functions to manage narrative paragraphs
+  const addNarrative = () => {
+    setNarratives([...narratives, ""]);
+  };
+
+  const removeNarrative = (index: number) => {
+    setNarratives(narratives.filter((_, i) => i !== index));
+  };
+
+  const updateNarrative = (index: number, value: string) => {
+    const updated = [...narratives];
+    updated[index] = value;
+    setNarratives(updated);
   };
 
   return (
@@ -255,6 +285,53 @@ export default function Home() {
           value={base.SUBJECT}
           onChange={(v) => setBase({ ...base, SUBJECT: v })}
         />
+
+        {/* NEW: Narrative section */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={labelStyle}>Narrative</label>
+          {narratives.map((narrative, index) => (
+            <div key={index} style={{ marginBottom: 10, display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <div style={{ flex: 1 }}>
+                <textarea
+                  value={narrative}
+                  placeholder={`Paragraph ${index + 1}`}
+                  onChange={(e) => updateNarrative(index, e.target.value)}
+                  style={{ width: "100%", padding: 10, fontSize: 16, minHeight: 80 }}
+                />
+              </div>
+              {narratives.length > 1 && (
+                <button
+                  onClick={() => removeNarrative(index)}
+                  style={{
+                    padding: "8px 12px",
+                    fontSize: 14,
+                    cursor: "pointer",
+                    backgroundColor: "#f44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 4,
+                  }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={addNarrative}
+            style={{
+              padding: "8px 12px",
+              fontSize: 14,
+              cursor: "pointer",
+              backgroundColor: "#4CAF50",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+            }}
+          >
+            + Add Paragraph
+          </button>
+        </div>
 
         <SelectField
           label="For your…"
