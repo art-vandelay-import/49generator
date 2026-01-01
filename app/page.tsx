@@ -225,7 +225,7 @@ export default function Home() {
   return (
     <main style={{ maxWidth: 860, margin: "40px auto", fontFamily: "system-ui" }}>
       <h1 style={{ fontSize: 32, marginBottom: 6 }}>49 Generator</h1>
-      <p style={{ marginBottom: 18 }}>Perfect 49's. Everytime. Fill in the Fields and Download to Word.</p>
+      <p style={{ marginBottom: 18 }}>Perfect 49's. Every time. Fill in the Fields and Download to Word.</p>
       <p style={{ marginTop: -8, marginBottom: 18, color: "#666", fontSize: 13 }}>
         Privacy: This tool does not store or log any data you enter—your 49 is generated on the fly.
       </p>
@@ -290,7 +290,7 @@ export default function Home() {
       <section style={cardStyle}>
         <Field
           label="SUBJECT"
-          placeholder="This will print in capital letters no matter how you type it."
+          placeholder="This will print in bolded capital letters no matter how you type it."
           value={base.SUBJECT}
           onChange={(v) => setBase({ ...base, SUBJECT: v })}
         />
