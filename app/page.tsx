@@ -433,7 +433,7 @@ export default function Home() {
           flexWrap: "wrap",
         }}
       >
-        <div>© {new Date().getFullYear()}The Penske File Project</div>
+        <div>© {new Date().getFullYear()} The Penske File Project</div>
         <div>webmaster@49generator.com</div>
       </footer>
     </main>
