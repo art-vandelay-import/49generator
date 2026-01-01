@@ -303,7 +303,7 @@ export default function Home() {
               <div style={{ flex: 1 }}>
                 <textarea
                   value={narrative}
-                  placeholder={`Paragraph ${index + 1}:"At T/P/O...`}
+                  placeholder={`Paragraph ${index + 1}`}
                   onChange={(e) => updateNarrative(index, e.target.value)}
                   style={{ width: "100%", padding: 10, fontSize: 16, minHeight: 80 }}
                 />
