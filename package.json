@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@next/third-parties": "^16.1.1",
     "docxtemplater": "^3.67.6",
     "next": "16.1.1",
     "pizzip": "^3.2.0",
