@@ -81,10 +81,10 @@ export async function POST(req: NextRequest) {
 
     // Use {{ }} delimiters because your Word doc uses {{REPORT_NUMBERS}} etc.
     const doc = new Docxtemplater(zip, {
-  paragraphLoop: true,
-  linebreaks: true,
-});
-
+      paragraphLoop: true,
+      linebreaks: true,
+      delimiters: { start: "{{", end: "}}" },
+    });
 
     doc.setData(data);
 
